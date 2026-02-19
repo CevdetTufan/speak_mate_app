@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import '../localization/app_locale.dart';
 import '../widgets/sound_wave_animation.dart';
 
 class SpeechScreen extends StatefulWidget {
@@ -151,7 +152,9 @@ class _SpeechScreenState extends State<SpeechScreen>
 
                   // Alt yazı
                   Text(
-                    _isListening ? 'TAP TO PAUSE' : 'TAP TO SPEAK',
+                    _isListening
+                        ? AppLocale.strings.tapToPause
+                        : AppLocale.strings.tapToSpeak,
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.5),
                       fontSize: 12,
@@ -192,7 +195,9 @@ class _SpeechScreenState extends State<SpeechScreen>
             child: Column(
               children: [
                 Text(
-                  _isListening ? 'AI IS LISTENING...' : 'SPEAK MATE',
+                  _isListening
+                      ? AppLocale.strings.aiIsListening
+                      : AppLocale.strings.appName,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 16,
@@ -228,8 +233,8 @@ class _SpeechScreenState extends State<SpeechScreen>
         child: Text(
           _displayText.isEmpty
               ? (_isListening
-                    ? 'Listening...'
-                    : 'Tap the microphone to start speaking')
+                    ? AppLocale.strings.listening
+                    : AppLocale.strings.tapMicToStart)
               : '"$_displayText"',
           key: ValueKey<String>(_displayText),
           textAlign: TextAlign.center,

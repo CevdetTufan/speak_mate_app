@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'localization/app_locale.dart';
 import 'screens/speech_screen.dart';
 
 class SpeakMateApp extends StatelessWidget {
@@ -7,7 +8,7 @@ class SpeakMateApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'SpeakMate',
+      title: AppLocale.strings.appTitle,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,
