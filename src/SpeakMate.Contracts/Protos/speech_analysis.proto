@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option csharp_namespace = "SpeakMate.Contracts";
+
+package speech_analysis;
+
+service SpeechAnalysisService {
+  // Bi-directional stream for analyzing audio on the fly
+  rpc AnalyzeStream (stream AudioChunk) returns (stream AnalysisResult);
+}
+
+message AudioChunk {
+  bytes audio_data = 1;
+  string session_id = 2; // To identify the user's session
+}
+
+message AnalysisResult {
+  string text = 1;       // The transcribed text
+  string ai_response = 2; // Any generated AI response
+  bool is_final = 3;     // True if this is the final result for an utterance
+}

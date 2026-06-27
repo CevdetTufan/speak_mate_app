@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SpeakMate.Contracts/SpeakMate.Contracts.csproj" />
+    <Project Path="src/SpeakMate.Server/SpeakMate.Server.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SpeakMate.Server.Tests/SpeakMate.Server.Tests.csproj" />
+  </Folder>
+</Solution>
