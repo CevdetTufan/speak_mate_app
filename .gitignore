@@ -480,3 +480,20 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# =========================
+# Flutter/Dart/Pub related
+# =========================
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+src/SpeakMate.Client/build/
+src/SpeakMate.Client/coverage/
+app.*.symbols
+app.*.map.json
+src/SpeakMate.Client/android/app/debug
+src/SpeakMate.Client/android/app/profile
+src/SpeakMate.Client/android/app/release
