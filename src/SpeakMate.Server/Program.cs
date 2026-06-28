@@ -61,6 +61,10 @@ app.MapGrpcService<SpeechAnalyzerService>();
 
 app.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
 
-app.Run();
+await app.RunAsync();
 
-public partial class Program { }
+//Test projemizin, ana sunucu projesine eriþebilmesi için 
+public partial class Program 
+{ 
+    protected Program() { }
+}
