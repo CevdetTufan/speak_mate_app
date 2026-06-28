@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <Protobuf Include="Protos\speech_analysis.proto" />
+    <Protobuf Include="Protos\auth.proto" />
   </ItemGroup>
 
 </Project>
