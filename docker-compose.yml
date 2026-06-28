@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: speakmate_postgres
+    environment:
+      POSTGRES_USER: speakmate_user
+      POSTGRES_PASSWORD: SpeakMatePassword123!
+      POSTGRES_DB: SpeakMateDb
+    ports:
+      - "5433:5432"
+    volumes:
+      - speakmate_pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  speakmate_pgdata:

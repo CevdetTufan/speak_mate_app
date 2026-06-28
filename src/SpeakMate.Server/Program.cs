@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SpeakMate.Application.Interfaces;
 using SpeakMate.Application.Services;
 using SpeakMate.Infrastructure.AiProviders;
 using SpeakMate.Infrastructure.Auth;
+using SpeakMate.Infrastructure.Data;
+using SpeakMate.Infrastructure.Repositories;
 using SpeakMate.Server.Services;
 using System.Text;
 
@@ -15,7 +18,12 @@ builder.Services.AddGrpc();
 // Add Dependency Injection
 builder.Services.AddSingleton<IAiService, MockAiService>();
 builder.Services.AddScoped<ISpeechProcessingService, SpeechProcessingService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, JwtAuthService>();
+
+// Configure Entity Framework Core
+builder.Services.AddDbContext<SpeakMateDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -54,3 +62,5 @@ app.MapGrpcService<SpeechAnalyzerService>();
 app.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
 
 app.Run();
+
+public partial class Program { }
