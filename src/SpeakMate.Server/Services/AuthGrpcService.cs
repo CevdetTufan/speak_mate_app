@@ -1,5 +1,4 @@
 using Grpc.Core;
-using Microsoft.AspNetCore.Authorization;
 using SpeakMate.Application.Interfaces;
 using SpeakMate.Contracts;
 
@@ -9,12 +8,9 @@ namespace SpeakMate.Server.Services
     {
         private readonly IAuthService _authLogic;
 
-        public AuthGrpcService(IAuthService authLogic)
-        {
-            _authLogic = authLogic;
-        }
+		public AuthGrpcService(IAuthService authLogic) => _authLogic = authLogic;
 
-        public override async Task<AuthResponse> Login(LoginRequest request, ServerCallContext context)
+		public override async Task<AuthResponse> Login(LoginRequest request, ServerCallContext context)
         {
             bool isValid = await _authLogic.ValidateUserAsync(request.Username, request.Password);
             if (isValid)

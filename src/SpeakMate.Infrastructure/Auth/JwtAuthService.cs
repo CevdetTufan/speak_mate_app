@@ -1,51 +1,64 @@
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Configuration;
 using SpeakMate.Application.Interfaces;
+using SpeakMate.Domain.Entities;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace SpeakMate.Infrastructure.Auth
+namespace SpeakMate.Infrastructure.Auth;
+
+public class JwtAuthService(IConfiguration configuration, IUserRepository userRepository) : IAuthService
 {
-    public class JwtAuthService : IAuthService
+    public string GenerateJwtToken(string username)
     {
-        private readonly IConfiguration _configuration;
+        var jwtSettings = configuration.GetSection("Jwt");
+        var key = Encoding.ASCII.GetBytes(jwtSettings["Key"]!);
 
-		public JwtAuthService(IConfiguration configuration) => _configuration = configuration;
-
-		public string GenerateJwtToken(string username)
+        var tokenDescriptor = new SecurityTokenDescriptor
         {
-            var jwtSettings = _configuration.GetSection("Jwt");
-            var key = Encoding.ASCII.GetBytes(jwtSettings["Key"]!);
+            Subject = new ClaimsIdentity(
+            [
+                new Claim(JwtRegisteredClaimNames.Sub, username),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            ]),
+            Expires = DateTime.UtcNow.AddDays(7),
+            Issuer = jwtSettings["Issuer"],
+            Audience = jwtSettings["Audience"],
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+        };
 
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(
-				[
-					new Claim(JwtRegisteredClaimNames.Sub, username),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-                ]),
-                Expires = DateTime.UtcNow.AddDays(7),
-                Issuer = jwtSettings["Issuer"],
-                Audience = jwtSettings["Audience"],
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-            };
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        return tokenHandler.WriteToken(token);
+    }
 
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var token = tokenHandler.CreateToken(tokenDescriptor);
-            return tokenHandler.WriteToken(token);
+    public async Task<bool> RegisterUserAsync(string username, string password)
+    {
+        var existingUser = await userRepository.GetUserByUsernameAsync(username);
+        if (existingUser != null)
+        {
+            return false; // User already exists
         }
 
-        public Task<bool> RegisterUserAsync(string username, string password)
+        var passwordHash = BCrypt.Net.BCrypt.HashPassword(password);
+        var newUser = new User
         {
-            // Mock registration: always return true for now
-            return Task.FromResult(true);
+            Username = username,
+            PasswordHash = passwordHash
+        };
+
+        return await userRepository.CreateUserAsync(newUser);
+    }
+
+    public async Task<bool> ValidateUserAsync(string username, string password)
+    {
+        var user = await userRepository.GetUserByUsernameAsync(username);
+        if (user == null)
+        {
+            return false;
         }
 
-        public Task<bool> ValidateUserAsync(string username, string password)
-        {
-            // Mock validation: allow any user for now
-            return Task.FromResult(!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password));
-        }
+        return BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
     }
 }
