@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../localization/app_locale.dart';
 import '../widgets/sound_wave_animation.dart';
+import '../presentation/providers/speech_provider.dart';
+import '../presentation/providers/auth_provider.dart';
 
-class SpeechScreen extends StatefulWidget {
+class SpeechScreen extends ConsumerStatefulWidget {
   const SpeechScreen({super.key});
 
   @override
-  State<SpeechScreen> createState() => _SpeechScreenState();
+  ConsumerState<SpeechScreen> createState() => _SpeechScreenState();
 }
 
-class _SpeechScreenState extends State<SpeechScreen>
+class _SpeechScreenState extends ConsumerState<SpeechScreen>
     with SingleTickerProviderStateMixin {
   late stt.SpeechToText _speech;
-  bool _isListening = false;
+  bool _isListeningLocal = false;
   bool _isInitialized = false;
   String _recognizedText = '';
   String _currentPartial = '';
@@ -40,7 +43,7 @@ class _SpeechScreenState extends State<SpeechScreen>
     _isInitialized = await _speech.initialize(
       onError: (error) {
         setState(() {
-          _isListening = false;
+          _isListeningLocal = false;
         });
         _pulseController.stop();
         _pulseController.reset();
@@ -48,10 +51,15 @@ class _SpeechScreenState extends State<SpeechScreen>
       onStatus: (status) {
         if (status == 'notListening' || status == 'done') {
           setState(() {
-            _isListening = false;
+            _isListeningLocal = false;
           });
           _pulseController.stop();
           _pulseController.reset();
+          
+          if (_recognizedText.isNotEmpty) {
+            // Trigger AI processing
+            ref.read(speechProvider.notifier).processWithAi(_recognizedText);
+          }
         }
       },
     );
@@ -62,10 +70,12 @@ class _SpeechScreenState extends State<SpeechScreen>
     if (!_isInitialized) return;
 
     setState(() {
-      _isListening = true;
+      _isListeningLocal = true;
       _recognizedText = '';
       _currentPartial = '';
     });
+    
+    ref.read(speechProvider.notifier).setLocalText('');
 
     _pulseController.repeat(reverse: true);
 
@@ -75,8 +85,10 @@ class _SpeechScreenState extends State<SpeechScreen>
           if (result.finalResult) {
             _recognizedText = result.recognizedWords;
             _currentPartial = '';
+            ref.read(speechProvider.notifier).setLocalText(_recognizedText);
           } else {
             _currentPartial = result.recognizedWords;
+            ref.read(speechProvider.notifier).setLocalText(_currentPartial);
           }
         });
       },
@@ -94,12 +106,12 @@ class _SpeechScreenState extends State<SpeechScreen>
     _pulseController.stop();
     _pulseController.reset();
     setState(() {
-      _isListening = false;
+      _isListeningLocal = false;
     });
   }
 
   void _toggleListening() {
-    if (_isListening) {
+    if (_isListeningLocal) {
       _stopListening();
     } else {
       _startListening();
@@ -113,14 +125,13 @@ class _SpeechScreenState extends State<SpeechScreen>
     super.dispose();
   }
 
-  String get _displayText {
-    if (_currentPartial.isNotEmpty) return _currentPartial;
-    if (_recognizedText.isNotEmpty) return _recognizedText;
-    return '';
-  }
-
   @override
   Widget build(BuildContext context) {
+    final speechState = ref.watch(speechProvider);
+    final isProcessing = speechState.isListening;
+    final displayAiResponse = speechState.aiResponse;
+    final displayText = speechState.text;
+
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -136,12 +147,46 @@ class _SpeechScreenState extends State<SpeechScreen>
                   const Spacer(flex: 2),
 
                   // Ses dalgası animasyonu
-                  SoundWaveAnimation(isAnimating: _isListening),
+                  SoundWaveAnimation(isAnimating: _isListeningLocal || isProcessing),
 
                   const SizedBox(height: 40),
 
                   // Tanınan metin
-                  _buildRecognizedText(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 40),
+                    child: Text(
+                      displayText.isEmpty 
+                        ? (_isListeningLocal ? AppLocale.strings.listening : AppLocale.strings.tapMicToStart)
+                        : '"$displayText"',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: displayText.isEmpty ? Colors.white30 : Colors.white70,
+                        fontSize: displayText.isEmpty ? 16 : 20,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+                  
+                  // AI Response
+                  if (displayAiResponse.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 40),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                        ),
+                        child: Text(
+                          displayAiResponse,
+                          style: const TextStyle(color: Colors.white, fontSize: 16),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
 
                   const Spacer(flex: 3),
 
@@ -152,7 +197,7 @@ class _SpeechScreenState extends State<SpeechScreen>
 
                   // Alt yazı
                   Text(
-                    _isListening
+                    _isListeningLocal
                         ? AppLocale.strings.tapToPause
                         : AppLocale.strings.tapToSpeak,
                     style: TextStyle(
@@ -178,24 +223,21 @@ class _SpeechScreenState extends State<SpeechScreen>
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          // Kapat butonu
           IconButton(
             onPressed: () {
-              // İleride geri navigasyon eklenecek
+              ref.read(authProvider.notifier).logout();
             },
             icon: Icon(
-              Icons.close,
+              Icons.logout,
               color: Colors.white.withValues(alpha: 0.7),
               size: 24,
             ),
           ),
-
-          // Başlık
           Expanded(
             child: Column(
               children: [
                 Text(
-                  _isListening
+                  _isListeningLocal
                       ? AppLocale.strings.aiIsListening
                       : AppLocale.strings.appName,
                   style: const TextStyle(
@@ -208,12 +250,8 @@ class _SpeechScreenState extends State<SpeechScreen>
               ],
             ),
           ),
-
-          // Ayarlar butonu
           IconButton(
-            onPressed: () {
-              // İleride ayarlar ekranı eklenecek
-            },
+            onPressed: () {},
             icon: Icon(
               Icons.settings_outlined,
               color: Colors.white.withValues(alpha: 0.7),
@@ -225,40 +263,13 @@ class _SpeechScreenState extends State<SpeechScreen>
     );
   }
 
-  Widget _buildRecognizedText() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        child: Text(
-          _displayText.isEmpty
-              ? (_isListening
-                    ? AppLocale.strings.listening
-                    : AppLocale.strings.tapMicToStart)
-              : '"$_displayText"',
-          key: ValueKey<String>(_displayText),
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: _displayText.isEmpty
-                ? Colors.white.withValues(alpha: 0.3)
-                : Colors.white.withValues(alpha: 0.7),
-            fontSize: _displayText.isEmpty ? 16 : 20,
-            fontStyle: FontStyle.italic,
-            fontWeight: FontWeight.w300,
-            height: 1.5,
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildMicButton() {
     return GestureDetector(
       onTap: _toggleListening,
       child: AnimatedBuilder(
         animation: _pulseAnimation,
         builder: (context, child) {
-          final scale = _isListening ? _pulseAnimation.value : 1.0;
+          final scale = _isListeningLocal ? _pulseAnimation.value : 1.0;
           return Transform.scale(
             scale: scale,
             child: Container(
@@ -274,13 +285,13 @@ class _SpeechScreenState extends State<SpeechScreen>
                 boxShadow: [
                   BoxShadow(
                     color: const Color(0xFF00B8D4).withValues(alpha: 0.4),
-                    blurRadius: _isListening ? 30 : 15,
-                    spreadRadius: _isListening ? 5 : 2,
+                    blurRadius: _isListeningLocal ? 30 : 15,
+                    spreadRadius: _isListeningLocal ? 5 : 2,
                   ),
                 ],
               ),
               child: Icon(
-                _isListening ? Icons.mic : Icons.mic_none,
+                _isListeningLocal ? Icons.mic : Icons.mic_none,
                 color: Colors.white,
                 size: 36,
               ),
