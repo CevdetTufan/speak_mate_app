@@ -4,11 +4,9 @@ using SpeakMate.Contracts;
 
 namespace SpeakMate.Server.Services
 {
-    public class AuthGrpcService : AuthService.AuthServiceBase
+    public class AuthGrpcService(IAuthService authLogic) : AuthService.AuthServiceBase
     {
-        private readonly IAuthService _authLogic;
-
-		public AuthGrpcService(IAuthService authLogic) => _authLogic = authLogic;
+        private readonly IAuthService _authLogic = authLogic;
 
 		public override async Task<AuthResponse> Login(LoginRequest request, ServerCallContext context)
         {

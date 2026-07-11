@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SpeakMate.Application.Interfaces;
 using SpeakMate.Application.Services;
+using SpeakMate.Infrastructure;
 using SpeakMate.Infrastructure.AiProviders;
 using SpeakMate.Infrastructure.Auth;
 using SpeakMate.Infrastructure.Data;
@@ -14,9 +15,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddGrpc();
+builder.Services.AddGrpcReflection();
 
 // Add Dependency Injection
-builder.Services.AddSingleton<IAiService, MockAiService>();
+builder.Services.AddAiProviders(builder.Configuration);
 builder.Services.AddScoped<ISpeechProcessingService, SpeechProcessingService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, JwtAuthService>();
@@ -59,11 +61,16 @@ app.UseAuthorization();
 app.MapGrpcService<AuthGrpcService>();
 app.MapGrpcService<SpeechAnalyzerService>();
 
+if (app.Environment.IsDevelopment())
+{
+    app.MapGrpcReflectionService();
+}
+
 app.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
 
 await app.RunAsync();
 
-//Test projemizin, ana sunucu projesine eriþebilmesi için 
+//Test projemizin, ana sunucu projesine eriÅŸebilmesi iÃ§in 
 public partial class Program 
 { 
     protected Program() { }
