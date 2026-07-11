@@ -497,3 +497,12 @@ app.*.map.json
 src/SpeakMate.Client/android/app/debug
 src/SpeakMate.Client/android/app/profile
 src/SpeakMate.Client/android/app/release
+
+# =========================
+# SpeakMate Local Secrets & AppSettings
+# =========================
+appsettings.Development.json
+appsettings.Local.json
+appsettings.Secret.json
+appsettings.*.Local.json
+*.secret.json
