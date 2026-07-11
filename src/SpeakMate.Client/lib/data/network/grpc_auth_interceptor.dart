@@ -6,7 +6,7 @@ class GrpcAuthInterceptor implements ClientInterceptor {
   @override
   ResponseFuture<R> interceptUnary<Q, R>(
       ClientMethod<Q, R> method, Q request, CallOptions options, ClientUnaryInvoker<Q, R> invoker) {
-    return ResponseFuture<R>(invoker(method, request, options.mergedWith(CallOptions(providers: [_provider]))));
+    return invoker(method, request, options.mergedWith(CallOptions(providers: [_provider])));
   }
 
   @override
