@@ -19,7 +19,6 @@ The project is structured as a Monorepo:
 
 When a voice command or text is streamed from the mobile client, it flows through the layers cleanly adhering to **Clean Architecture** and **Strategy Pattern**:
 
-![Request Flow Architecture Diagram](docs/request_flow.png)
 
 ```mermaid
 flowchart LR
