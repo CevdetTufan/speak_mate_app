@@ -3,13 +3,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../services/generated/auth.pbgrpc.dart';
 
+import 'dart:io';
+
 class GrpcAuthRepository implements AuthRepository {
   late ClientChannel _channel;
   late AuthServiceClient _stub;
 
   GrpcAuthRepository() {
     _channel = ClientChannel(
-      'localhost',
+      Platform.isAndroid ? '10.0.2.2' : 'localhost',
       port: 5001,
       options: const ChannelOptions(credentials: ChannelCredentials.insecure()),
     );
